@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CartIQ – Smart Shopping Assistant</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #7c5cfc;
+    --accent2: #fc5c7d;
+    --accent3: #5cf4d8;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --gold: #f5c842;
+    --green: #42e09f;
+    --red: #fc5c5c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, .brand { font-family: 'Syne', sans-serif; }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 20% 20%, rgba(124,92,252,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(252,92,125,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(92,244,216,0.04) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  #root { position: relative; z-index: 1; }
+
+  /* NAV */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(20px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+  .brand span { color: var(--accent); }
+  .nav-links { display: flex; gap: 0.5rem; }
+  .nav-btn {
+    background: none; border: none; color: var(--muted);
+    padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--surface2); color: var(--text);
+  }
+  .nav-btn.active { color: var(--accent); }
+
+  /* PAGES */
+  .page { padding: 2rem; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  /* HERO */
+  .hero { text-align: center; padding: 4rem 1rem 2rem; }
+  .hero h1 { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 1.1rem; margin: 1rem auto; max-width: 480px; }
+
+  /* SEARCH BAR */
+  .search-wrap { display: flex; gap: 0.75rem; max-width: 600px; margin: 2rem auto; }
+  .search-input {
+    flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 0.85rem 1.25rem;
+    color: var(--text); font-size: 1rem; font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+  .btn-primary {
+    background: var(--accent); border: none; color: #fff;
+    padding: 0.85rem 1.5rem; border-radius: 12px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-primary:hover { background: #9070ff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,92,252,0.4); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* BUDGET CARD */
+  .budget-strip {
+    display: flex; align-items: center; gap: 1rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .budget-strip label { font-weight: 600; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .budget-input {
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 0.5rem 0.85rem; color: var(--text);
+    font-size: 1rem; font-family: 'DM Sans', sans-serif; width: 140px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .budget-input:focus { border-color: var(--accent); }
+  .budget-pill {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: rgba(92,244,216,0.1); border: 1px solid rgba(92,244,216,0.2);
+    border-radius: 100px; padding: 0.4rem 1rem; font-size: 0.85rem; color: var(--accent3);
+    margin-left: auto;
+  }
+  .budget-pill.over { background: rgba(252,92,92,0.1); border-color: rgba(252,92,92,0.2); color: var(--red); }
+
+  /* PRODUCT GRID */
+  .section-title {
+    font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .tag {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 0.25rem 0.6rem; border-radius: 6px;
+    background: rgba(124,92,252,0.15); color: var(--accent); border: 1px solid rgba(124,92,252,0.3);
+  }
+  .product-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+  .product-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; cursor: pointer;
+    transition: all 0.25s; position: relative;
+  }
+  .product-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(124,92,252,0.15); }
+  .product-img {
+    width: 100%; height: 180px; object-fit: cover;
+    background: var(--surface2); display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem; border-bottom: 1px solid var(--border);
+  }
+  .product-body { padding: 1rem; }
+  .product-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.4rem; line-height: 1.3; }
+  .product-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
+  .product-price { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+  .stars { color: var(--gold); font-size: 0.8rem; }
+  .rating-num { color: var(--muted); font-size: 0.8rem; margin-left: 0.25rem; }
+  .badge-cheap {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--green); color: #0a0a0f; font-size: 0.65rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.5rem; border-radius: 6px;
+  }
+  .btn-add {
+    width: 100%; margin-top: 0.85rem; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 0.55rem; border-radius: 8px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-add:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* COMPARE TABLE */
+  .compare-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; margin-bottom: 2.5rem;
+  }
+  .compare-box table { width: 100%; border-collapse: collapse; }
+  .compare-box th {
+    background: var(--surface2); padding: 0.85rem 1.25rem; text-align: left;
+    font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-box td { padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .compare-box tr:last-child td { border-bottom: none; }
+  .compare-box tr:hover td { background: var(--surface2); }
+  .price-best { color: var(--green); font-weight: 700; }
+  .price-bad { color: var(--red); }
+  .store-chip {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 600;
+    background: rgba(124,92,252,0.12); color: var(--accent); border: 1px solid rgba(124,92,252,0.2);
+  }
+
+  /* AI PANEL */
+  .ai-panel {
+    background: linear-gradient(135deg, rgba(124,92,252,0.08), rgba(92,244,216,0.05));
+    border: 1px solid rgba(124,92,252,0.25); border-radius: 16px; padding: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .ai-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+  .ai-icon { font-size: 1.5rem; }
+  .ai-title { font-family: 'Syne', sans-serif; font-weight: 700; }
+  .ai-subtitle { color: var(--muted); font-size: 0.8rem; }
+  .ai-response {
+    background: var(--surface); border-radius: 12px; padding: 1.25rem;
+    font-size: 0.9rem; line-height: 1.7; color: var(--text); white-space: pre-wrap;
+    min-height: 60px;
+  }
+  .ai-response.loading { color: var(--muted); font-style: italic; }
+  .ai-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+  .ai-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 100px; padding: 0.4rem 1rem; font-size: 0.82rem; cursor: pointer;
+    transition: all 0.2s; color: var(--muted);
+  }
+  .ai-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* DASHBOARD */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem;
+  }
+  .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin-bottom: 0.5rem; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.accent { color: var(--accent); }
+  .stat-delta { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+  @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem;
+  }
+  .chart-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 1rem; }
+  canvas { max-height: 220px; }
+
+  /* EXPENSES TABLE */
+  .expense-row {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .expense-row:hover { background: var(--surface2); }
+  .expense-row:last-child { border-bottom: none; }
+  .expense-emoji { font-size: 1.5rem; width: 40px; text-align: center; }
+  .expense-name { flex: 1; font-size: 0.9rem; font-weight: 500; }
+  .expense-cat { font-size: 0.75rem; color: var(--muted); }
+  .expense-date { font-size: 0.78rem; color: var(--muted); }
+  .expense-amt { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--accent2); }
+  .btn-del {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 1rem; padding: 0.25rem; border-radius: 6px; transition: all 0.15s;
+  }
+  .btn-del:hover { color: var(--red); background: rgba(252,92,92,0.1); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 0.85rem 1.25rem;
+    font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem;
+    animation: slideUp 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* MOBILE NAV */
+  @media (max-width: 520px) {
+    nav { padding: 0.75rem 1rem; }
+    .nav-btn { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
+    .page { padding: 1.25rem; }
+    .hero { padding: 2rem 0.5rem 1rem; }
+  }
+
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 3rem; color: var(--muted); }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .progress-bar-wrap { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }
+  .progress-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── SAMPLE DATA ────────────────────────────────────────────────
+const SAMPLE_PRODUCTS = {
+  phone: [
+    { id:1, name:"Samsung Galaxy S24", price:799, rating:4.6, reviews:2341, emoji:"📱", category:"Electronics", store:"Amazon" },
+    { id:2, name:"iPhone 15 Pro", price:999, rating:4.8, reviews:5102, emoji:"📱", category:"Electronics", store:"Apple" },
+    { id:3, name:"Google Pixel 8", price:699, rating:4.5, reviews:1873, emoji:"📱", category:"Electronics", store:"BestBuy" },
+    { id:4, name:"OnePlus 12", price:549, rating:4.4, reviews:987, emoji:"📱", category:"Electronics", store:"Amazon" },
+  ],
+  laptop: [
+    { id:5, name:"MacBook Air M3", price:1099, rating:4.9, reviews:8901, emoji:"💻", category:"Electronics", store:"Apple" },
+    { id:6, name:"Dell XPS 15", price:1299, rating:4.5, reviews:3210, emoji:"💻", category:"Electronics", store:"Dell" },
+    { id:7, name:"Lenovo ThinkPad X1", price:1049, rating:4.6, reviews:2100, emoji:"💻", category:"Electronics", store:"Lenovo" },
+    { id:8, name:"ASUS ZenBook 14", price:749, rating:4.3, reviews:1450, emoji:"💻", category:"Electronics", store:"Amazon" },
+  ],
+  headphones: [
+    { id:9, name:"Sony WH-1000XM5", price:349, rating:4.8, reviews:12000, emoji:"🎧", category:"Audio", store:"Sony" },
+    { id:10, name:"Apple AirPods Pro 2", price:249, rating:4.7, reviews:9800, emoji:"🎧", category:"Audio", store:"Apple" },
+    { id:11, name:"Bose QuietComfort 45", price:279, rating:4.6, reviews:7200, emoji:"🎧", category:"Audio", store:"BestBuy" },
+    { id:12, name:"Jabra Evolve2", price:199, rating:4.3, reviews:3100, emoji:"🎧", category:"Audio", store:"Amazon" },
+  ],
+  default: [
+    { id:13, name:"Kindle Paperwhite", price:139, rating:4.7, reviews:45000, emoji:"📖", category:"Electronics", store:"Amazon" },
+    { id:14, name:"Instant Pot Duo", price:89, rating:4.8, reviews:89000, emoji:"🍲", category:"Kitchen", store:"Amazon" },
+    { id:15, name:"Nike Air Max 270", price:149, rating:4.5, reviews:22000, emoji:"👟", category:"Footwear", store:"Nike" },
+    { id:16, name:"Levi's 501 Jeans", price:69, rating:4.4, reviews:15000, emoji:"👖", category:"Clothing", store:"Levi's" },
+  ]
+};
+
+const COMPARE_DATA = {
+  phone: [
+    { store:"Amazon", price: 799, shipping:"Free 2-day", stock:"In Stock", deal:"Prime Deal" },
+    { store:"BestBuy", price: 829, shipping:"Free", stock:"In Stock", deal:null },
+    { store:"Walmart", price: 779, shipping:"$5.99", stock:"Limited", deal:"Rollback" },
+    { store:"Official Store", price: 849, shipping:"Free", stock:"In Stock", deal:null },
+  ],
+  default: [
+    { store:"Amazon", price: 199, shipping:"Free 2-day", stock:"In Stock", deal:"Lightning Deal" },
+    { store:"Target", price: 219, shipping:"Free", stock:"In Stock", deal:null },
+    { store:"Walmart", price: 189, shipping:"$4.99", stock:"In Stock", deal:"Rollback" },
+    { store:"eBay", price: 175, shipping:"$8.00", stock:"Used-Good", deal:"Save 13%" },
+  ]
+};
+
+const INITIAL_EXPENSES = [
+  { id:1, name:"Sony Headphones WH-1000XM5", amount:349, category:"Audio", emoji:"🎧", date:"2024-01-15" },
+  { id:2, name:"Nike Running Shoes", amount:149, category:"Footwear", emoji:"👟", date:"2024-01-20" },
+  { id:3, name:"Kindle Paperwhite", amount:139, category:"Electronics", emoji:"📖", date:"2024-01-25" },
+  { id:4, name:"Instant Pot Duo", amount:89, category:"Kitchen", emoji:"🍲", date:"2024-02-01" },
+  { id:5, name:"Levi's 501 Jeans", amount:69, category:"Clothing", emoji:"👖", date:"2024-02-10" },
+];
+
+// ─── API CALL ─────────────────────────────────────────────────────
+async function callClaude(prompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await res.json();
+  return data.content?.map(b => b.text || "").join("\n") || "No response.";
+}
+
+// ─── STARS ────────────────────────────────────────────────────────
+function Stars({ rating }) {
+  const full = Math.floor(rating), half = rating % 1 >= 0.5;
+  return <span className="stars">
+    {"★".repeat(full)}{half ? "½" : ""}{"☆".repeat(5 - full - (half?1:0))}
+  </span>;
+}
+
+// ─── PRODUCT CARD ─────────────────────────────────────────────────
+function ProductCard({ p, cheapest, onAdd }) {
+  return (
+    <div className="product-card" onClick={() => onAdd(p)}>
+      {cheapest && <span className="badge-cheap">Best Price</span>}
+      <div className="product-img">{p.emoji}</div>
+      <div className="product-body">
+        <div className="product-name">{p.name}</div>
+        <div style={{color:"var(--muted)", fontSize:"0.78rem"}}>{p.store}</div>
+        <div className="product-meta">
+          <div>
+            <Stars rating={p.rating} />
+            <span className="rating-num">({(p.reviews/1000).toFixed(1)}k)</span>
+          </div>
+          <div className="product-price">${p.price}</div>
+        </div>
+        <button className="btn-add" onClick={e => { e.stopPropagation(); onAdd(p); }}>
+          + Add to Expenses
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HOME PAGE ─────────────────────────────────────────────────────
+function HomePage({ onSearch, budget, setBudget, expenses }) {
+  const [q, setQ] = useState("");
+  const spent = expenses.reduce((a,e) => a+e.amount, 0);
+  const remaining = budget - spent;
+  const pct = budget ? Math.min(100, (spent/budget)*100) : 0;
+  const featured = SAMPLE_PRODUCTS.default;
+  const cheapest = Math.min(...featured.map(p=>p.price));
+
+  return (
+    <div className="page">
+      <div className="hero">
+        <h1>Your <em>AI-Powered</em><br/>Shopping Assistant</h1>
+        <p>Find the best deals, track spending & get smart recommendations instantly.</p>
+      </div>
+
+      <div className="search-wrap">
+        <input className="search-input" placeholder="Search for phones, laptops, headphones…"
+          value={q} onChange={e=>setQ(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&q&&onSearch(q)} />
+        <button className="btn-primary" onClick={()=>q&&onSearch(q)}>Search</button>
+      </div>
+
+      <div className="budget-strip">
+        <label>Monthly Budget</label>
+        <input type="number" className="budget-input" placeholder="$0.00"
+          value={budget||""} onChange={e=>setBudget(Number(e.target.value))} />
+        {budget > 0 && <>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.78rem",color:"var(--muted)",marginBottom:"4px"}}>
+              <span>Spent: ${spent}</span><span>${budget} budget</span>
+            </div>
+            <div className="progress-bar-wrap">
+              <div className="progress-bar" style={{width:pct+"%", background: pct>90?"var(--red)":pct>70?"var(--gold)":"var(--green)"}} />
+            </div>
+          </div>
+          <div className={`budget-pill ${remaining<0?"over":""}`}>
+            {remaining<0 ? `⚠️ Over by $${Math.abs(remaining)}` : `✅ $${remaining} left`}
+          </div>
+        </>}
+      </div>
+
+      <div className="section-title">Featured Products <span className="tag">Popular</span></div>
+      <div className="product-grid">
+        {featured.map(p => <ProductCard key={p.id} p={p} cheapest={p.price===cheapest} onAdd={()=>{}} />)}
+      </div>
+
+      <div className="section-title">Quick Searches</div>
+      <div style={{display:"flex",gap:"0.75rem",flexWrap:"wrap",marginBottom:"2rem"}}>
+        {["Smartphones","Laptops","Headphones","Cameras","Tablets","Smart Watches"].map(t=>(
+          <button key={t} className="ai-chip" onClick={()=>onSearch(t.toLowerCase())}>{t}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SEARCH RESULTS PAGE ──────────────────────────────────────────
+function SearchPage({ query, onAdd, budget, expenses }) {
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  const key = Object.keys(SAMPLE_PRODUCTS).find(k => query.toLowerCase().includes(k)) || "default";
+  const products = SAMPLE_PRODUCTS[key] || SAMPLE_PRODUCTS.default;
+  const cheapest = Math.min(...products.map(p=>p.price));
+  const compareData = key === "phone" ? COMPARE_DATA.phone : COMPARE_DATA.default;
+  const bestPrice = Math.min(...compareData.map(c=>c.price));
+
+  const spent = expenses.reduce((a,e)=>a+e.amount,0);
+
+  const askAI = async (type) => {
+    setAiLoading(true); setAiText("");
+    const prompts = {
+      alternatives: `I'm shopping for "${query}". Suggest 3 cheaper alternatives with approximate prices, key features, and why they're good value. Be concise and helpful. Use bullet points.`,
+      tips: `Give 5 specific money-saving tips for buying "${query}" online. Include timing, sites to check, and negotiation tactics. Be concise.`,
+      analysis: `I've spent $${spent} this month total. My budget is $${budget||"not set"}. I'm about to buy "${query}" for around $${cheapest}. Give me a brief spending analysis and whether this purchase is wise. 2-3 sentences.`,
+    };
+    try {
+      const text = await callClaude(prompts[type]);
+      setAiText(text);
+    } catch { setAiText("⚠️ Unable to reach AI. Check your connection."); }
+    setAiLoading(false);
+  };
+
+  return (
+    <div className="page">
+      <div style={{marginBottom:"1.5rem"}}>
+        <div style={{color:"var(--muted)",fontSize:"0.85rem",marginBottom:"0.25rem"}}>Search results for</div>
+        <h2 style={{fontSize:"1.6rem",fontWeight:800}}>"{query}"</h2>
+        <div style={{color:"var(--muted)",fontSize:"0.85rem"}}>{products.length} products found</div>
+      </div>
+
+      <div className="section-title">Products <span className="tag">{products.length} results</span></div>
+      <div className="product-grid">
+        {products.map(p => <ProductCard key={p.id} p={p} cheapest={p.price===cheapest} onAdd={onAdd} />)}
+      </div>
+
+      {/* Price Comparison */}
+      <div className="section-title" style={{cursor:"pointer"}} onClick={()=>setCompareOpen(!compareOpen)}>
+        Price Comparison <span className="tag">Across Stores</span>
+        <span style={{marginLeft:"auto",color:"var(--muted)",fontSize:"0.8rem"}}>{compareOpen?"▲ Hide":"▼ Show"}</span>
+      </div>
+      {compareOpen && <div className="compare-box" style={{marginBottom:"2rem"}}>
+        <table>
+          <thead><tr>
+            <th>Store</th><th>Price</th><th>Shipping</th><th>Stock</th><th>Deal</th>
+          </tr></thead>
+          <tbody>
+            {compareData.map((c,i)=>(
+              <tr key={i}>
+                <td><span className="store-chip">{c.store}</span></td>
+                <td className={c.price===bestPrice?"price-best":"price-bad"}>${c.price}</td>
+                <td style={{color:"var(--muted)",fontSize:"0.85rem"}}>{c.shipping}</td>
+                <td style={{fontSize:"0.85rem"}}>{c.stock}</td>
+                <td>{c.deal ? <span style={{fontSize:"0.75rem",color:"var(--gold)"}}>🏷️ {c.deal}</span> : <span style={{color:"var(--muted)"}}>—</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>}
+
+      {/* AI Panel */}
+      <div className="ai-panel">
+        <div className="ai-header">
+          <span className="ai-icon">🤖</span>
+          <div>
+            <div className="ai-title">AI Shopping Advisor</div>
+            <div className="ai-subtitle">Powered by Claude — Ask anything about this search</div>
+          </div>
+        </div>
+        <div className={`ai-response ${aiLoading?"loading":""}`}>
+          {aiLoading ? "⏳ Thinking…" : aiText || "Click a button below to get AI-powered insights about your search."}
+        </div>
+        <div className="ai-actions">
+          <button className="ai-chip" onClick={()=>askAI("alternatives")} disabled={aiLoading}>
+            {aiLoading ? <span className="spinner"/> : "💡 Cheaper Alternatives"}
+          </button>
+          <button className="ai-chip" onClick={()=>askAI("tips")} disabled={aiLoading}>
+            {aiLoading ? <span className="spinner"/> : "💰 Money-Saving Tips"}
+          </button>
+          <button className="ai-chip" onClick={()=>askAI("analysis")} disabled={aiLoading}>
+            {aiLoading ? <span className="spinner"/> : "📊 Budget Analysis"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DASHBOARD PAGE ──────────────────────────────────────────────
+function DashboardPage({ expenses, setExpenses, budget }) {
+  const chartRef1 = useRef(null), chartRef2 = useRef(null);
+  const chart1 = useRef(null), chart2 = useRef(null);
+  const [aiTip, setAiTip] = useState("");
+  const [tipLoading, setTipLoading] = useState(false);
+
+  const total = expenses.reduce((a,e)=>a+e.amount,0);
+  const avg = expenses.length ? (total/expenses.length).toFixed(0) : 0;
+  const remaining = budget ? budget - total : null;
+  const topExpense = expenses.length ? [...expenses].sort((a,b)=>b.amount-a.amount)[0] : null;
+
+  // Category breakdown
+  const cats = {};
+  expenses.forEach(e => { cats[e.category] = (cats[e.category]||0) + e.amount; });
+  const catLabels = Object.keys(cats), catVals = Object.values(cats);
+
+  // Monthly trend (mock)
+  const months = ["Sep","Oct","Nov","Dec","Jan","Feb"];
+  const monthlySpend = [320, 415, 280, 560, 390, total];
+
+  useEffect(() => {
+    if (chart1.current) chart1.current.destroy();
+    if (chart2.current) chart2.current.destroy();
+    const palette = ["#7c5cfc","#fc5c7d","#5cf4d8","#f5c842","#42e09f","#fc5c5c"];
+    if (chartRef1.current && catLabels.length) {
+      chart1.current = new Chart(chartRef1.current, {
+        type:"doughnut",
+        data: { labels:catLabels, datasets:[{ data:catVals, backgroundColor:palette, borderWidth:0, hoverOffset:6 }] },
+        options: { plugins:{ legend:{labels:{color:"#6b6b85",font:{family:"DM Sans",size:11}}} }, cutout:"65%" }
+      });
+    }
+    if (chartRef2.current) {
+      chart2.current = new Chart(chartRef2.current, {
+        type:"line",
+        data: { labels:months, datasets:[{ label:"Spending", data:monthlySpend, borderColor:"#7c5cfc", backgroundColor:"rgba(124,92,252,0.08)", fill:true, tension:0.4, pointBackgroundColor:"#7c5cfc", pointRadius:4 }] },
+        options: { plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:"#6b6b85",font:{family:"DM Sans"}},grid:{color:"rgba(255,255,255,0.04)"}}, y:{ticks:{color:"#6b6b85",font:{family:"DM Sans"},callback:v=>"$"+v},grid:{color:"rgba(255,255,255,0.04)"}} } }
+      });
+    }
+    return () => { chart1.current?.destroy(); chart2.current?.destroy(); };
+  }, [expenses]);
+
+  const deleteExpense = id => setExpenses(prev => prev.filter(e=>e.id!==id));
+
+  const getAITips = async () => {
+    setTipLoading(true); setAiTip("");
+    const catBreakdown = catLabels.map((c,i)=>`${c}: $${catVals[i]}`).join(", ");
+    const prompt = `I spent $${total} this month. Breakdown: ${catBreakdown}. Budget: $${budget||"not set"}. 
+    Give me 4 specific, actionable budget-saving tips based on my actual spending pattern. Number them 1-4. Be direct and personal.`;
+    try { setAiTip(await callClaude(prompt)); }
+    catch { setAiTip("⚠️ AI unavailable. Check connection."); }
+    setTipLoading(false);
+  };
+
+  return (
+    <div className="page">
+      <div style={{marginBottom:"1.5rem"}}>
+        <h2 style={{fontSize:"1.6rem",fontWeight:800}}>Expense Dashboard</h2>
+        <div style={{color:"var(--muted)",fontSize:"0.85rem"}}>Your spending overview & AI insights</div>
+      </div>
+
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="stat-label">Total Spent</div>
+          <div className="stat-val accent">${total}</div>
+          <div className="stat-delta">{expenses.length} purchases</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Budget Left</div>
+          <div className={`stat-val ${remaining===null?"":remaining<0?"red":"green"}`}>
+            {remaining===null?"—":`$${Math.abs(remaining)}`}
+          </div>
+          <div className="stat-delta">{remaining===null?"Set a budget":remaining<0?"Over budget":"Remaining"}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Avg Purchase</div>
+          <div className="stat-val">${avg}</div>
+          <div className="stat-delta">Per transaction</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Top Spend</div>
+          <div className="stat-val" style={{fontSize:"1.3rem"}}>{topExpense?.emoji} ${topExpense?.amount||0}</div>
+          <div className="stat-delta">{topExpense?.name?.substring(0,20)||"—"}</div>
+        </div>
+      </div>
+
+      <div className="charts-grid">
+        <div className="chart-card">
+          <div className="chart-title">Spending by Category</div>
+          {catLabels.length ? <canvas ref={chartRef1}/> : <div className="empty-state"><div>No data yet</div></div>}
+        </div>
+        <div className="chart-card">
+          <div className="chart-title">Monthly Trend</div>
+          <canvas ref={chartRef2}/>
+        </div>
+      </div>
+
+      {/* AI Tips */}
+      <div className="ai-panel" style={{marginBottom:"2rem"}}>
+        <div className="ai-header">
+          <span className="ai-icon">💡</span>
+          <div>
+            <div className="ai-title">AI Budget Coach</div>
+            <div className="ai-subtitle">Personalized tips based on your spending habits</div>
+          </div>
+        </div>
+        <div className={`ai-response ${tipLoading?"loading":""}`}>
+          {tipLoading ? "⏳ Analyzing your spending patterns…" : aiTip || "Get AI-powered tips tailored to your actual expenses."}
+        </div>
+        <div className="ai-actions">
+          <button className="btn-primary" onClick={getAITips} disabled={tipLoading}>
+            {tipLoading ? <><span className="spinner"/> &nbsp;Analyzing…</> : "✨ Get Personalized Tips"}
+          </button>
+        </div>
+      </div>
+
+      {/* Expenses List */}
+      <div className="section-title">All Expenses <span className="tag">{expenses.length} items</span></div>
+      <div className="compare-box">
+        {expenses.length === 0 ? (
+          <div className="empty-state">
+            <div className="emoji">🛒</div>
+            <div>No expenses yet. Add products from Search!</div>
+          </div>
+        ) : expenses.map(e => (
+          <div key={e.id} className="expense-row">
+            <span className="expense-emoji">{e.emoji}</span>
+            <div style={{flex:1}}>
+              <div className="expense-name">{e.name}</div>
+              <div className="expense-cat">{e.category} · {e.date}</div>
+            </div>
+            <span className="expense-amt">${e.amount}</span>
+            <button className="btn-del" onClick={()=>deleteExpense(e.id)}>✕</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 2500); return ()=>clearTimeout(t); }, []);
+  return <div className="toast">✅ {msg}</div>;
+}
+
+// ─── APP ROOT ─────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState("home");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [budget, setBudget] = useState(500);
+  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
+  const [toast, setToast] = useState(null);
+
+  const handleSearch = q => { setSearchQuery(q); setPage("search"); };
+
+  const handleAdd = product => {
+    const expense = {
+      id: Date.now(), name: product.name, amount: product.price,
+      category: product.category, emoji: product.emoji,
+      date: new Date().toISOString().slice(0,10)
+    };
+    setExpenses(prev => [expense, ...prev]);
+    setToast(`Added "${product.name}" to expenses`);
+  };
+
+  return (
+    <>
+      <nav>
+        <div className="brand">Cart<span>IQ</span></div>
+        <div className="nav-links">
+          <button className={`nav-btn${page==="home"?" active":""}`} onClick={()=>setPage("home")}>🏠 Home</button>
+          <button className={`nav-btn${page==="search"?" active":""}`} onClick={()=>setPage("search")} disabled={!searchQuery}>
+            🔍 Search
+          </button>
+          <button className={`nav-btn${page==="dash"?" active":""}`} onClick={()=>setPage("dash")}>
+            📊 Dashboard
+          </button>
+        </div>
+      </nav>
+
+      {page==="home" && <HomePage onSearch={handleSearch} budget={budget} setBudget={setBudget} expenses={expenses} />}
+      {page==="search" && <SearchPage query={searchQuery} onAdd={handleAdd} budget={budget} expenses={expenses} />}
+      {page==="dash" && <DashboardPage expenses={expenses} setExpenses={setExpenses} budget={budget} />}
+
+      {toast && <Toast msg={toast} onDone={()=>setToast(null)} />}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
