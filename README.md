@@ -1,4 +1,4 @@
-# 🛍️ Smart Shopping Assistant (CartIQ)
+# 🛍️ Smart Shopping Assistant (SmartCart)
 
 AI-powered web app to:
 - Search products
